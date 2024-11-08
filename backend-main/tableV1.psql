@@ -1,0 +1,154 @@
+
+create type interestEnum as enum(
+'football',
+'dance',
+'gaming',
+'programming'
+);
+
+
+CREATE or replace FUNCTION match_activity()
+    returns trigger
+    as
+    $match_activity$
+    BEGIN
+    drop table if exists matchedActivity;
+    drop table if exists userInfo;
+    create temp table userInfo
+        as(
+        select users.DoB, users.gender, new.activityId from users
+        where users.userID= NEW.matcheeid);
+    create temp table matchedActivity
+    as(
+    select activity.activityID, activity.lowerage, activity.upperage, activitygender.gender, activity.maxnumberparticipants, activity.currentNumberParticipants
+        from activity
+        join
+        activitygender on activitygender.activityId=activity.activityId
+        join userinfo on userinfo.gender=activitygender.gender and (activity.lowerage<=DATE_PART('year', age(current_date, userInfo.dob))) AND (activity.upperage>=DATE_PART('year', age(current_date, userInfo.dob)))
+        where activity.activityID=NEW.activityID);
+    raise notice '%', (select lowerAge from matchedActivity);
+    if exists( select * from matchedActivity where maxnumberparticipants>currentnumberparticipants )
+    THEN
+    update activity set currentnumberparticipants=currentnumberparticipants+1 where activity.activityid=new.activityid;
+    return new;
+    end if;
+    return null;
+    end;
+    $match_activity$ LANGUAGE plpgsql;
+
+
+
+
+    CREATE or replace FUNCTION leave_activity()
+    returns trigger
+    as
+    $leave_activity$
+    BEGIN
+    delete from message where senderID=OLD.matcheeID and activityid=OLD.activityID;
+    if exists(select * from matchedusers where matcheeID=OLD.matcheeID and activityid=OLD.activityID)
+    then
+    update activity set currentnumberparticipants=currentnumberparticipants-1 where activity.activityid=OLD.activityid;
+    return OLD;
+    end if;
+    return null;
+    end;
+    $leave_activity$ LANGUAGE plpgsql;
+    
+
+create or replace trigger matchingUser
+before insert on matchedUsers
+for each row
+WHEN (pg_trigger_depth() = 0)
+execute function match_activity();
+
+create or replace trigger leaveActivity
+before delete on matchedUsers
+for each row
+WHEN (pg_trigger_depth() = 0)
+execute function leave_activity();
+    delete from matchedusers where matcheeID=OLD.matcheeID and activityid=OLD.activityID;
+        
+        
+
+CREATE TABLE users(
+    userID serial primary key,
+    username varchar(20) UNIQUE not null,
+    displayName varchar(20) not null,
+    DoB date not null check(DATE_PART('year', age(current_date, DoB))>=18),
+    email varchar(40) UNIQUE not null,
+    gender varchar(1) not null,
+    name varchar(30) not null,
+    password varchar(100) not null,
+    description varchar(200)
+);
+
+create table location(
+    userID serial not null,
+    country varchar(20) not null,
+    city varchar(30) not null,
+    CONSTRAINT fk_location FOREIGN KEY (userID) REFERENCES users(userID),
+    CONSTRAINT pk_location PRIMARY KEY (userID, country, city)
+);
+
+create  table activity(
+    activityID serial PRIMARY KEY,
+    creatorID serial not null,
+    title varchar(100) not null,
+    paid boolean not null,
+    maxNumberParticipants int not null,
+    currentNumberParticipants int not null default 0,
+    activitydate DATE not null,
+    latitude DOUBLE PRECISION not null,
+    longitude DOUBLE PRECISION not null,
+    upperAge int default 999,
+    lowerAge int default 18 check (lowerage >= 18),
+    creationDate date not null default CURRENT_TIMESTAMP,
+    address varchar(50),
+    description varchar(200) not null,
+    cost int,
+    duration int not null,
+    CHECK (upperage>=lowerage),
+    CHECK (duration>=0),
+    Constraint null_cost_when_paid CHECK(NOT (paid and cost is null)),
+    Constraint fk_activity FOREIGN key (creatorID) References users(userID)
+);
+
+create table activityGender(
+    activityID serial not null,
+    gender varchar(1) not null,
+    Constraint pk_activityGender PRIMARY KEY (activityID, gender),
+    CONSTRAINT fk_activityGen_1 FOREIGN KEY (activityID) REFERENCES activity(activityID)
+ );
+
+create table activityInterests(
+    activityID serial not null,
+    interests interestEnum not null,
+    Constraint pk_activityInterests PRIMARY KEY (activityID, interests),
+    CONSTRAINT fk_activityInterests FOREIGN KEY (activityID) REFERENCES activity(activityID)
+);
+
+create table interests(
+    userID serial not null,
+    interests interestEnum not null,
+    Constraint pk_Interest PRIMARY KEY (userID, interests),
+    CONSTRAINT fk_interests FOREIGN KEY (userID) REFERENCES users(userID)
+);
+
+create table matchedUsers(
+    activityID serial not null,
+    matcheeID serial not null,
+    CONSTRAINT pk_matchedUsers PRIMARY KEY (activityID, matcheeID),
+    CONSTRAINT fk_matchID_allUsers FOREIGN KEY (activityID) REFERENCES activity(activityId),
+    CONSTRAINT fk_matcheeID FOREIGN KEY (matcheeID) REFERENCES users(userID)
+);
+
+create table message(
+    messageID serial Primary key,
+    senderID serial not null,
+    activityID serial not null,
+    messagecontent varchar(200) not null,
+    messagetime TIMESTAMP not null default CURRENT_TIMESTAMP,
+    CONSTRAINT fk_message FOREIGN KEY (senderID, activityID) REFERENCES matchedUsers(matcheeID, activityID)
+);
+-- drop table
+    users, location, activity, activityGender, activityInterests, interests, matchedUsers, message;

@@ -1,0 +1,65 @@
+
+INSERT INTO users (username, displayname ,DoB, email, gender, name, password) VALUES
+('johnsmith','john', '1990-04-12', 'johnsmith@example.com', 'M', 'John Smith', 'pass'),
+('emilyjones','emily','1989-07-24', 'emilyjones@example.com', 'F', 'Emily Jones', 'pass'),
+('mikeross','mike','1995-01-30', 'mikeross@example.com', 'M', 'Mike Ross', 'pass');
+
+INSERT INTO location (userID, country, city) VALUES
+(1, 'USA', 'New York'),
+(2, 'Canada', 'Toronto'),
+(3, 'UK', 'London');
+
+INSERT INTO activity (creatorID, title, paid, maxNumberParticipants, activitydate, latitude, longitude, upperAge, lowerAge, address, description, duration, cost) VALUES
+(1, 'Football', false, 22, '2024-05-15', 40.7128, -74.0060, 40, 18, 'Spooner Street', 'Football', 30,null),
+(2,'dance', true, 15, '2024-06-20', 43.65107, -79.347015, 35, 18, 'Dance Street', 'dance', 10,30),
+(3,'programming', true, 50, '2024-07-10', 51.5074, -0.1278, 30, 18, 'Silicon Valley','programming' ,20,40);
+
+
+INSERT INTO activityInterests (activityID, interests) VALUES
+(1, 'football'),
+(2, 'dance'),
+(3, 'programming');
+
+INSERT INTO activitygender(activityID, gender) VALUES
+(1, 'M'),
+(1, 'F'),
+(2, 'M'),
+(3, 'F');
+
+
+INSERT INTO interests (userID, interests) VALUES
+(1, 'football'),
+(2, 'dance'),
+(3, 'programming');
+
+
+INSERT INTO matchedUsers (activityID, matcheeID) VALUES
+(1, 1),
+(1, 2),
+(1, 3);
+
+
+INSERT INTO message (senderID, activityid, messagecontent) VALUES
+(1, 1, 'Hello guys!');
+
+
+
+SELECT 
+    m.messageID, 
+    u.username, 
+    m.matchID, 
+    m.messagecontent, 
+    m.messagetime 
+FROM 
+    message m
+JOIN 
+    matchedUsers mu ON m.matchID = mu.activityID AND m.senderID = mu.matcheeID
+JOIN 
+    users u ON mu.matcheeID = u.userID
+WHERE 
+    m.matchID = $1;
+
+SELECT activityid FROM matchedUsers WHERE matcheeID = 1;
+
+INSERT INTO matchedUsers (activityID, matcheeID) VALUES
+(2, 1);

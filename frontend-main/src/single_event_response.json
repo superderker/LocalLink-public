@@ -1,0 +1,15 @@
+{
+  "activityID": 2,
+  "creatorID": 5,
+  "title": "Pilkastning",
+  "paid": false,
+  "maxNumberParticipants": 50,
+  "currentNumberParticipants": 10,
+  "activityDate": "2024-10-10 15:30:00",
+  "address": "Askrikesvägen, 185 93 Vaxholm",
+  "latitude": "58.3293",
+  "longitude": "18.0686",
+  "upperAge": 999,
+  "lowerAge": 18,
+  "creationDate": "2024-04-06 23:00:00"
+}
