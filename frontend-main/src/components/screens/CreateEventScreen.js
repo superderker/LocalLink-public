@@ -6,7 +6,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import{ useState } from 'react';
 
-const API_KEY = "AIzaSyCfkvcY5hu5HYjIa_Vj7hq5bI9UYRumQ_Q";
+
 
 const categories = ["football", "dance", "gaming", "programming"];
 
